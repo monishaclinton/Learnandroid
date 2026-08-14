@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaPlayer;
@@ -9,20 +10,26 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication.models.Audio;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 
 import java.util.ArrayList;
 
@@ -34,23 +41,29 @@ public class HomePage extends AppCompatActivity {
 
     AudioAdapter adapter;
 
-    MediaPlayer mediaPlayer;
-
     SeekBar seekBar;
 
     TextView songName;
-    ImageView songimg;
 
+    ImageView songimg;
 
     Button playButton;
     Button pauseButton;
 
+    LinearLayout playerControls;
+
+    CardView playerCard;
+
     Handler handler = new Handler();
 
-    boolean isPrepared = false;
+    MusicManager musicManager;
 
     private static final int REQUEST_AUDIO_PERMISSION = 100;
 
+
+    // =========================================
+    // ON CREATE
+    // =========================================
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,22 +72,155 @@ public class HomePage extends AppCompatActivity {
 
         EdgeToEdge.enable(this);
 
-        setContentView(R.layout.activity_home_page);
+        setContentView(
+                R.layout.activity_home_page
+        );
 
 
-        recyclerView = findViewById(R.id.recyclerView);
+        // =========================================
+        // MUSIC MANAGER
+        // =========================================
 
-        seekBar = findViewById(R.id.seekBar);
-
-        songName = findViewById(R.id.songName);
-        songimg=findViewById(R.id.songimg);
-
-        playButton = findViewById(R.id.playButton);
-
-        pauseButton = findViewById(R.id.pauseButton);
+        musicManager =
+                MusicManager.getInstance();
 
 
-        audioList = new ArrayList<>();
+        // =========================================
+        // ADS
+        // =========================================
+
+        MobileAds.initialize(
+                this,
+                initializationStatus -> {
+
+                    AdView adView =
+                            findViewById(R.id.adView);
+
+                    if (adView != null) {
+
+                        AdRequest adRequest =
+                                new AdRequest.Builder()
+                                        .build();
+
+                        adView.loadAd(adRequest);
+                    }
+                }
+        );
+
+
+        // =========================================
+        // FIND VIEWS
+        // =========================================
+
+        recyclerView =
+                findViewById(R.id.recyclerView);
+
+        seekBar =
+                findViewById(R.id.seekBar);
+
+        songName =
+                findViewById(R.id.songName);
+
+        songimg =
+                findViewById(R.id.songimg);
+
+        playerCard =
+                findViewById(R.id.playerCard);
+
+        playButton =
+                findViewById(R.id.playButton);
+
+        pauseButton =
+                findViewById(R.id.pauseButton);
+
+        playerControls =
+                findViewById(R.id.playerControls);
+
+
+        // =========================================
+        // INITIAL PLAYER UI
+        // =========================================
+
+        playButton.setVisibility(
+                View.VISIBLE
+        );
+
+        pauseButton.setVisibility(
+                View.GONE
+        );
+
+
+        // =========================================
+        // BOTTOM NAVIGATION
+        // =========================================
+
+        LinearLayout bottomNavContainer =
+                findViewById(
+                        R.id.bottomNavContainer
+                );
+
+        BottomNav nav =
+                new BottomNav();
+
+        View navigation =
+                nav.create(
+                        this,
+                        new BottomNav.NavigationListener() {
+
+                            @Override
+                            public void onHomeClick() {
+
+                                Toast.makeText(
+                                        HomePage.this,
+                                        "Home",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            }
+
+
+                            @Override
+                            public void onProfileClick() {
+
+                                Intent intent =
+                                        new Intent(
+                                                HomePage.this,
+                                                Profile.class
+                                        );
+
+                                startActivity(intent);
+                            }
+
+
+                            @Override
+                            public void onSettingsClick() {
+
+                                Intent intent =
+                                        new Intent(
+                                                HomePage.this,
+                                                Settings.class
+                                        );
+
+                                startActivity(intent);
+                            }
+                        }
+                );
+
+
+        if (bottomNavContainer != null &&
+                navigation != null) {
+
+            bottomNavContainer.addView(
+                    navigation
+            );
+        }
+
+
+        // =========================================
+        // AUDIO LIST
+        // =========================================
+
+        audioList =
+                new ArrayList<>();
 
 
         recyclerView.setLayoutManager(
@@ -82,23 +228,69 @@ public class HomePage extends AppCompatActivity {
         );
 
 
-        // Adapter
+        // =========================================
+        // AUDIO ADAPTER
+        // =========================================
+
         adapter = new AudioAdapter(
                 audioList,
                 audio -> {
 
+                    // =================================
+                    // SHOW PLAYER
+                    // =================================
+
+                    songimg.setVisibility(
+                            View.VISIBLE
+                    );
+
+                    songName.setVisibility(
+                            View.VISIBLE
+                    );
+
+                    seekBar.setVisibility(
+                            View.VISIBLE
+                    );
+
+                    playerCard.setVisibility(
+                            View.VISIBLE
+                    );
+
+                    playerControls.setVisibility(
+                            View.VISIBLE
+                    );
+
+
+                    // =================================
+                    // SONG NAME
+                    // =================================
+
                     songName.setText(
                             audio.getTitle()
-                    );if (audio.getAlbumArt() != null &&
+                    );
+
+
+                    // =================================
+                    // ALBUM IMAGE
+                    // =================================
+
+                    if (audio.getAlbumArt() != null &&
                             !audio.getAlbumArt().isEmpty()) {
 
-                        Uri imageUri = Uri.parse(
-                                audio.getAlbumArt()
-                        );
+                        try {
 
-                        songimg.setImageURI(
-                                imageUri
-                        );
+                            songimg.setImageURI(
+                                    Uri.parse(
+                                            audio.getAlbumArt()
+                                    )
+                            );
+
+                        } catch (Exception e) {
+
+                            songimg.setImageResource(
+                                    R.drawable.ic_media_play
+                            );
+                        }
 
                     } else {
 
@@ -107,55 +299,162 @@ public class HomePage extends AppCompatActivity {
                         );
                     }
 
-                    // Play audio
-                    playAudio(
-                            audio.getPath()
+
+                    // =================================
+                    // OPEN MUSIC PLAYER PAGE
+                    // =================================
+
+                    songimg.setOnClickListener(v -> {
+
+                        Intent intent =
+                                new Intent(
+                                        HomePage.this,
+                                        MusicPlayerPage.class
+                                );
+
+                        intent.putExtra(
+                                "title",
+                                audio.getTitle()
+                        );
+
+                        intent.putExtra(
+                                "artist",
+                                audio.getArtist()
+                        );
+
+                        intent.putExtra(
+                                "path",
+                                audio.getPath()
+                        );
+
+                        intent.putExtra(
+                                "albumArt",
+                                audio.getAlbumArt()
+                        );
+
+                        startActivity(intent);
+                    });
+
+
+                    // =================================
+                    // PLAY SONG
+                    // =================================
+
+                    musicManager.play(
+                            HomePage.this,
+                            audio.getPath(),
+
+                            mp -> {
+
+                                seekBar.setMax(
+                                        mp.getDuration()
+                                );
+
+                                mp.start();
+
+
+                                playButton.setVisibility(
+                                        View.GONE
+                                );
+
+                                pauseButton.setVisibility(
+                                        View.VISIBLE
+                                );
+
+
+                                updateSeekBar();
+                            },
+
+
+                            mp -> {
+
+                                handler.removeCallbacksAndMessages(
+                                        null
+                                );
+
+                                seekBar.setProgress(0);
+
+
+                                playButton.setVisibility(
+                                        View.VISIBLE
+                                );
+
+                                pauseButton.setVisibility(
+                                        View.GONE
+                                );
+                            }
                     );
                 }
         );
 
 
+        recyclerView.setAdapter(
+                adapter
+        );
 
-        recyclerView.setAdapter(adapter);
 
-
+        // =========================================
         // PLAY BUTTON
+        // =========================================
+
         playButton.setOnClickListener(v -> {
 
-            if (mediaPlayer != null && isPrepared) {
-
-                if (!mediaPlayer.isPlaying()) {
-
-                    mediaPlayer.start();
-
-                    updateSeekBar();
-                }
-
-            } else {
+            if (!musicManager.exists()) {
 
                 Toast.makeText(
                         this,
                         "Select a song first",
                         Toast.LENGTH_SHORT
                 ).show();
+
+                return;
             }
+
+
+            musicManager.start();
+
+
+            playButton.setVisibility(
+                    View.GONE
+            );
+
+            pauseButton.setVisibility(
+                    View.VISIBLE
+            );
+
+
+            updateSeekBar();
         });
 
 
+        // =========================================
         // PAUSE BUTTON
+        // =========================================
+
         pauseButton.setOnClickListener(v -> {
 
-            if (mediaPlayer != null &&
-                    isPrepared &&
-                    mediaPlayer.isPlaying()) {
+            musicManager.pause();
 
-                mediaPlayer.pause();
 
-            }
+            playButton.setVisibility(
+                    View.VISIBLE
+            );
+
+            pauseButton.setVisibility(
+                    View.GONE
+            );
+
+
+            handler.removeCallbacksAndMessages(
+                    null
+            );
         });
 
 
+        // =========================================
         // SEEK BAR
+        // =========================================
+
         seekBar.setOnSeekBarChangeListener(
                 new SeekBar.OnSeekBarChangeListener() {
 
@@ -166,10 +465,9 @@ public class HomePage extends AppCompatActivity {
                             boolean fromUser) {
 
                         if (fromUser &&
-                                mediaPlayer != null &&
-                                isPrepared) {
+                                musicManager.exists()) {
 
-                            mediaPlayer.seekTo(
+                            musicManager.seekTo(
                                     progress
                             );
                         }
@@ -179,26 +477,53 @@ public class HomePage extends AppCompatActivity {
                     @Override
                     public void onStartTrackingTouch(
                             SeekBar seekBar) {
-
                     }
 
 
                     @Override
                     public void onStopTrackingTouch(
                             SeekBar seekBar) {
-
                     }
                 }
         );
 
 
+        // =========================================
+        // PERMISSION
+        // =========================================
+
         checkPermission();
     }
 
 
-    // =================================================
+    // =========================================
+    // UPDATE SEEK BAR
+    // =========================================
+
+    private void updateSeekBar() {
+
+        if (musicManager != null &&
+                musicManager.isPlaying()) {
+
+            seekBar.setMax(
+                    musicManager.getDuration()
+            );
+
+            seekBar.setProgress(
+                    musicManager.getCurrentPosition()
+            );
+
+            handler.postDelayed(
+                    this::updateSeekBar,
+                    500
+            );
+        }
+    }
+
+
+    // =========================================
     // PERMISSION
-    // =================================================
+    // =========================================
 
     private void checkPermission() {
 
@@ -246,9 +571,9 @@ public class HomePage extends AppCompatActivity {
     }
 
 
-    // =================================================
-    // LOAD AUDIO FILES
-    // =================================================
+    // =========================================
+    // LOAD AUDIO
+    // =========================================
 
     private void loadAudioFiles() {
 
@@ -277,90 +602,123 @@ public class HomePage extends AppCompatActivity {
                 MediaStore.Audio.Media.TITLE,
 
                 MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.ALBUM_ID,
+
+                MediaStore.Audio.Media.ALBUM_ID
         };
 
 
         String selection =
-                MediaStore.Audio.Media.IS_MUSIC + " != 0";
+                MediaStore.Audio.Media.IS_MUSIC
+                        + " != 0";
 
 
         String sortOrder =
-                MediaStore.Audio.Media.TITLE + " ASC";
+                MediaStore.Audio.Media.TITLE
+                        + " ASC";
 
 
-        try (Cursor cursor =
-                     getContentResolver().query(
-                             collection,
-                             projection,
-                             selection,
-                             null,
-                             sortOrder
-                     )) {
+        try {
 
-            int albumIdColumn =
-                    cursor.getColumnIndexOrThrow(
-                            MediaStore.Audio.Media.ALBUM_ID
+            Cursor cursor =
+                    getContentResolver().query(
+                            collection,
+                            projection,
+                            selection,
+                            null,
+                            sortOrder
                     );
+
+
             if (cursor == null) {
+
+                Toast.makeText(
+                        this,
+                        "No audio files found",
+                        Toast.LENGTH_SHORT
+                ).show();
+
                 return;
             }
 
 
-            int idColumn =
-                    cursor.getColumnIndexOrThrow(
-                            MediaStore.Audio.Media._ID
-                    );
+            try {
 
+                int idColumn =
+                        cursor.getColumnIndexOrThrow(
+                                MediaStore.Audio.Media._ID
+                        );
 
-            int titleColumn =
-                    cursor.getColumnIndexOrThrow(
-                            MediaStore.Audio.Media.TITLE
-                    );
+                int titleColumn =
+                        cursor.getColumnIndexOrThrow(
+                                MediaStore.Audio.Media.TITLE
+                        );
 
+                int artistColumn =
+                        cursor.getColumnIndexOrThrow(
+                                MediaStore.Audio.Media.ARTIST
+                        );
 
-            int artistColumn =
-                    cursor.getColumnIndexOrThrow(
-                            MediaStore.Audio.Media.ARTIST
-                    );
-
-
-            while (cursor.moveToNext()) {
-
-
-                long id =
-                        cursor.getLong(idColumn);
-
-
-                String title =
-                        cursor.getString(titleColumn);
-
-
-                String artist =
-                        cursor.getString(artistColumn);
-                long albumId = cursor.getLong(albumIdColumn);
-                Uri albumArtUri = Uri.parse(
-                        "content://media/external/audio/albumart/"
-                                + albumId
-                );
-
-                Uri audioUri =
-                        Uri.withAppendedPath(
-                                collection,
-                                String.valueOf(id)
+                int albumIdColumn =
+                        cursor.getColumnIndexOrThrow(
+                                MediaStore.Audio.Media.ALBUM_ID
                         );
 
 
-                Audio audio =
-                        new Audio(
-                                title,
-                                artist,
-                                audioUri.toString(),
-                                albumArtUri.toString()
-                        );
+                while (cursor.moveToNext()) {
+
+                    long id =
+                            cursor.getLong(
+                                    idColumn
+                            );
 
 
-                audioList.add(audio);
+                    String title =
+                            cursor.getString(
+                                    titleColumn
+                            );
+
+
+                    String artist =
+                            cursor.getString(
+                                    artistColumn
+                            );
+
+
+                    long albumId =
+                            cursor.getLong(
+                                    albumIdColumn
+                            );
+
+
+                    Uri albumArtUri =
+                            Uri.parse(
+                                    "content://media/external/audio/albumart/"
+                                            + albumId
+                            );
+
+
+                    Uri audioUri =
+                            Uri.withAppendedPath(
+                                    collection,
+                                    String.valueOf(id)
+                            );
+
+
+                    Audio audio =
+                            new Audio(
+                                    title,
+                                    artist,
+                                    audioUri.toString(),
+                                    albumArtUri.toString()
+                            );
+
+
+                    audioList.add(audio);
+                }
+
+            } finally {
+
+                cursor.close();
             }
 
 
@@ -374,179 +732,15 @@ public class HomePage extends AppCompatActivity {
                     "Error: " + e.getMessage(),
                     Toast.LENGTH_LONG
             ).show();
-        }
-    }
-
-
-    // =================================================
-    // PLAY AUDIO
-    // =================================================
-
-    private void playAudio(String path) {
-
-        try {
-
-            // Stop old SeekBar updates
-            handler.removeCallbacksAndMessages(null);
-
-
-            // Release old MediaPlayer
-            if (mediaPlayer != null) {
-
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                }
-
-                mediaPlayer.release();
-
-                mediaPlayer = null;
-            }
-
-
-            // Reset SeekBar
-            seekBar.setProgress(0);
-
-            seekBar.setMax(0);
-
-//            seekBar.setMax(100);
-//            seekBar.setProgress(50);
-
-            // Player is not prepared yet
-            isPrepared = false;
-
-
-            // Create MediaPlayer
-            mediaPlayer = new MediaPlayer();
-
-
-            Uri audioUri = Uri.parse(path);
-
-
-            // Set audio source
-            mediaPlayer.setDataSource(
-                    this,
-                    audioUri
-            );
-
-
-            // When audio is ready
-            mediaPlayer.setOnPreparedListener(
-                    mp -> {
-
-                        isPrepared = true;
-
-
-                        // Set duration
-                        seekBar.setMax(
-                                mp.getDuration()
-                        );
-
-
-                        // Start music
-                        mp.start();
-
-
-                        // Start SeekBar
-                        updateSeekBar();
-
-
-                        Toast.makeText(
-                                HomePage.this,
-                                "Playing",
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-            );
-
-
-            // When song finishes
-            mediaPlayer.setOnCompletionListener(
-                    mp -> {
-
-                        seekBar.setProgress(0);
-
-                        isPrepared = false;
-
-                        Toast.makeText(
-                                HomePage.this,
-                                "Song finished",
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-            );
-
-
-            // Error
-            mediaPlayer.setOnErrorListener(
-                    (mp, what, extra) -> {
-
-                        isPrepared = false;
-
-                        Toast.makeText(
-                                HomePage.this,
-                                "MediaPlayer error: "
-                                        + what
-                                        + " / "
-                                        + extra,
-                                Toast.LENGTH_LONG
-                        ).show();
-
-                        return true;
-                    }
-            );
-
-
-            // Prepare
-            mediaPlayer.prepareAsync();
-
-
-        } catch (Exception e) {
-
-            isPrepared = false;
-
-            Toast.makeText(
-                    this,
-                    "Play error: "
-                            + e.getMessage(),
-                    Toast.LENGTH_LONG
-            ).show();
 
             e.printStackTrace();
         }
     }
 
 
-    // =================================================
-    // UPDATE SEEK BAR
-    // =================================================
-
-    private void updateSeekBar() {
-
-        if (mediaPlayer != null &&
-                isPrepared &&
-                mediaPlayer.isPlaying()) {
-
-
-            int currentPosition =
-                    mediaPlayer.getCurrentPosition();
-
-
-            seekBar.setProgress(
-                    currentPosition
-            );
-
-
-            handler.postDelayed(
-                    this::updateSeekBar,
-                    500
-            );
-        }
-    }
-
-
-    // =================================================
+    // =========================================
     // PERMISSION RESULT
-    // =================================================
+    // =========================================
 
     @Override
     public void onRequestPermissionsResult(
@@ -563,7 +757,6 @@ public class HomePage extends AppCompatActivity {
 
         if (requestCode ==
                 REQUEST_AUDIO_PERMISSION) {
-
 
             if (grantResults.length > 0 &&
                     grantResults[0] ==
@@ -583,27 +776,23 @@ public class HomePage extends AppCompatActivity {
     }
 
 
-    // =================================================
-    // DESTROY
-    // =================================================
+    // =========================================
+    // ON DESTROY
+    // =========================================
 
     @Override
     protected void onDestroy() {
 
-        handler.removeCallbacksAndMessages(null);
+        handler.removeCallbacksAndMessages(
+                null
+        );
 
-
-        if (mediaPlayer != null) {
-
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
-
-            mediaPlayer.release();
-
-            mediaPlayer = null;
-        }
-
+        /*
+         * DO NOT release MusicManager here.
+         *
+         * Music must continue when moving
+         * from HomePage to MusicPlayerPage.
+         */
 
         super.onDestroy();
     }

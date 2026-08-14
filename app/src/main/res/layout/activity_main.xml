@@ -2,7 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:background="#CAACD7"
+    android:background="#482050"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
@@ -50,15 +50,14 @@
     <com.google.android.material.card.MaterialCardView
 
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_below="@id/headerLayout"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="-30dp"
-        app:cardCornerRadius="24dp"
+
+        android:layout_marginTop="-50dp"
+        app:cardCornerRadius="50dp"
         app:cardElevation="10dp"
         app:strokeWidth="1dp"
-        app:strokeColor="#DDDDDD">
+        >
 
 
         <LinearLayout
@@ -75,7 +74,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Phone No / Email"
-                app:boxBackgroundMode="filled"
+
+                app:boxBackgroundMode="none"
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusBottomStart="16dp"
@@ -85,6 +85,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/login_useremail"
                     android:layout_width="match_parent"
+                    android:background="@drawable/text_field"
                     android:layout_height="wrap_content"/>
 
             </com.google.android.material.textfield.TextInputLayout>
@@ -97,17 +98,20 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
+
                 android:hint="Password"
+
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusBottomStart="16dp"
-                app:boxBackgroundMode="filled"
+                app:boxBackgroundMode="none"
                 app:endIconMode="password_toggle">
 
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/login_password"
                     android:layout_width="match_parent"
+                    android:background="@drawable/text_field"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"/>
 
@@ -123,7 +127,7 @@
                 android:text="Submit"
                 android:textColor="@color/white"
                 app:cornerRadius="30dp"
-                app:backgroundTint="#6200EE"/>
+                app:backgroundTint="#482050"/>
 
 
 
@@ -173,7 +177,7 @@
                 android:gravity="center"
                 android:text="Don't have a account?SIGN UP"/>
 
-            <ImageView android:id="@+id/google_icon"
+            <ImageView android:id="@+id/google_login"
                 android:layout_width="35dp"
                 android:layout_height="35dp"
                 android:layout_marginTop="20dp"

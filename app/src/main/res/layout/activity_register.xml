@@ -26,7 +26,7 @@
         android:layout_below="@id/headerLayout"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:layout_margin="50dp"
+        android:layout_margin="20dp"
          android:layout_gravity="center"
         app:cardCornerRadius="24dp"
         app:cardElevation="10dp"
@@ -49,13 +49,14 @@
                 app:boxCornerRadiusTopStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusBottomStart="16dp"
-                app:boxBackgroundMode="filled"
+                app:boxBackgroundMode="none"
                 >
 
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/customername"
                     android:layout_width="match_parent"
+                    android:background="@drawable/text_field"
                     android:layout_height="wrap_content"/>
 
             </com.google.android.material.textfield.TextInputLayout>
@@ -65,7 +66,7 @@
         android:layout_height="wrap_content"
         android:hint="Email"
 
-        app:boxBackgroundMode="filled"
+        app:boxBackgroundMode="none"
         app:boxCornerRadiusTopStart="16dp"
         app:boxCornerRadiusTopEnd="16dp"
         app:boxCornerRadiusBottomStart="16dp"
@@ -74,6 +75,7 @@
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/email"
+            android:background="@drawable/text_field"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
@@ -91,13 +93,14 @@
         app:boxCornerRadiusTopStart="16dp"
         app:boxCornerRadiusTopEnd="16dp"
         app:boxCornerRadiusBottomStart="16dp"
-        app:boxBackgroundMode="filled"
+        app:boxBackgroundMode="none"
         app:endIconMode="password_toggle">
 
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/password"
             android:layout_width="match_parent"
+            android:background="@drawable/text_field"
             android:layout_height="wrap_content"
             android:inputType="textPassword"/>
 
@@ -112,13 +115,14 @@
         app:boxCornerRadiusTopStart="16dp"
         app:boxCornerRadiusTopEnd="16dp"
         app:boxCornerRadiusBottomStart="16dp"
-        app:boxBackgroundMode="filled"
+        app:boxBackgroundMode="none"
         app:endIconMode="password_toggle">
 
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/Confirmpassword"
             android:layout_width="match_parent"
+            android:background="@drawable/text_field"
             android:layout_height="wrap_content"
             android:inputType="textPassword"/>
 
