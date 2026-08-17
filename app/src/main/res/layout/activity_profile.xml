@@ -4,14 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
 
-    android:id="@+id/main"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
 
     android:orientation="vertical"
-    android:padding="20dp"
-    android:background="#FFFFFF"
-    android:layout_margin="20dp"
+
+    android:background="#482050"
+
     tools:context=".Profile">
 
 
@@ -19,205 +19,176 @@
     <!-- HEADER -->
     <!-- =============================== -->
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-
-        android:text="Profile"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="#482050"
-
-        android:gravity="center"
-
-        android:layout_marginBottom="30dp" />
-
-
-    <!-- =============================== -->
-    <!-- PROFILE IMAGE -->
-    <!-- =============================== -->
-
-    <ImageView
-        android:id="@+id/profileImage"
-
-        android:layout_width="110dp"
-        android:layout_height="110dp"
-
-        android:layout_gravity="center"
-
-        android:src="@drawable/round"
-        android:scaleType="centerCrop"
-
-
-        android:padding="20dp" />
-
-
-    <!-- =============================== -->
-    <!-- NAME -->
-    <!-- =============================== -->
-
-    <TextView
-        android:id="@+id/profileName"
-
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-
-        android:text="User Name"
-
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="#482050"
-
-        android:gravity="center"
-
-        android:layout_marginTop="15dp" />
-
-
-    <!-- =============================== -->
-    <!-- EMAIL -->
-    <!-- =============================== -->
-
-    <TextView
-        android:id="@+id/profileEmail"
-
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-
-        android:text="user@gmail.com"
-
-        android:textSize="15sp"
-        android:textColor="#777777"
-
-        android:gravity="center"
-
-        android:layout_marginTop="5dp" />
-
-
-    <!-- =============================== -->
-    <!-- DIVIDER -->
-    <!-- =============================== -->
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-
-        android:background="#E0E0E0"
-
-        android:layout_marginTop="30dp"
-        android:layout_marginBottom="10dp" />
-
-
-    <!-- =============================== -->
-    <!-- EDIT PROFILE -->
-    <!-- =============================== -->
-
     <LinearLayout
-        android:id="@+id/editProfile"
-
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="wrap_content"
 
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-
-        android:clickable="true"
-        android:focusable="true">
+        android:id="@+id/profile"
+        android:orientation="vertical">
 
 
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-
-            android:src="@drawable/ic_edit"
-            app:tint="#482050" />
 
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
-            android:layout_weight="1"
+            android:text="Profile"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#482050"
 
-            android:text="Edit Profile"
-            android:textSize="17sp"
-            android:textColor="#333333"
-
-            android:layout_marginStart="15dp" />
-
-
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-
-            android:src="@drawable/ic_media_play" />
-
-    </LinearLayout>
+            android:gravity="center"
+            android:id="@+id/prof_text"
+            android:layout_marginBottom="30dp" />
 
 
-    <!-- =============================== -->
-    <!-- SETTINGS -->
-    <!-- =============================== -->
-
-    <LinearLayout
-        android:id="@+id/profileSettings"
-
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-
-        android:clickable="true"
-        android:focusable="true">
-
+        <!-- =============================== -->
+        <!-- PROFILE IMAGE -->
+        <!-- =============================== -->
 
         <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:id="@+id/profileImage"
 
-            android:src="@drawable/settings"
-            app:tint="#482050" />
+            android:layout_width="110dp"
+            android:layout_height="110dp"
 
+            android:layout_gravity="center"
+
+            android:src="@drawable/round"
+            android:scaleType="centerCrop"
+
+
+            android:padding="20dp" />
+
+
+        <!-- =============================== -->
+        <!-- NAME -->
+        <!-- =============================== -->
 
         <TextView
-            android:layout_width="0dp"
+            android:id="@+id/profileName"
+
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
-            android:layout_weight="1"
 
+
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+
+            android:gravity="center"
+
+            android:layout_marginTop="15dp" />
+
+
+        <!-- =============================== -->
+        <!-- EMAIL -->
+        <!-- =============================== -->
+
+        <TextView
+            android:id="@+id/profileEmail"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textColor="#ffffff"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+
+            android:layout_marginTop="5dp" />
+
+
+        <!-- =============================== -->
+        <!-- DIVIDER -->
+        <!-- =============================== -->
+
+        <!--    <View-->
+        <!--        android:layout_width="match_parent"-->
+        <!--        android:layout_height="1dp"-->
+
+        <!--        android:background="#E0E0E0"-->
+
+        <!--        android:layout_marginTop="30dp"-->
+        <!--        android:layout_marginBottom="10dp" />-->
+
+
+        <!-- =============================== -->
+        <!-- EDIT PROFILE -->
+        <!-- =============================== -->
+
+
+
+        <!-- =============================== -->
+        <!-- SETTINGS -->
+        <!-- =============================== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Edit Password"
-            android:textSize="17sp"
-            android:textColor="#333333"
+            android:layout_marginTop="50dp"
+            android:layout_marginLeft="10dp"
+            android:textColor="@color/white"
+            android:layout_gravity="left"/>
 
-            android:layout_marginStart="15dp" />
 
 
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+        <LinearLayout
+            android:id="@+id/profileSettings"
 
-            android:src="@drawable/ic_media_play" />
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+
+            android:orientation="horizontal"
+            android:layout_gravity="center"
+            android:layout_margin="10dp"
+            android:clickable="true"
+            android:focusable="true">
+
+
+
+            <EditText
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:id="@+id/editPassword"
+                android:text="Edit Password"
+                android:textSize="17sp"
+
+                android:textColor="#ffffff"
+
+                />
+
+
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:id="@+id/editPasswordButton"
+                android:src="@drawable/pencil"
+                />
+        </LinearLayout>
+
+
+        <!-- =============================== -->
+        <!-- LOGOUT -->
+        <!-- =============================== -->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logoutButton"
+
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_margin="10dp"
+            android:text="Logout"
+            android:textSize="16sp"
+            android:textColor="#482050"
+            android:layout_marginTop="25dp"
+            app:strokeColor="#482050"
+            android:backgroundTint="#ffffff" />
+
 
     </LinearLayout>
-
-
-    <!-- =============================== -->
-    <!-- LOGOUT -->
-    <!-- =============================== -->
-
-    <Button
-        android:id="@+id/logoutButton"
-
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-
-        android:text="Logout"
-        android:textSize="16sp"
-        android:textColor="#FFFFFF"
-
-        android:layout_marginTop="25dp"
-
-        android:backgroundTint="#482050" />
-
-
 </LinearLayout>

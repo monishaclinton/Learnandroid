@@ -396,4 +396,21 @@ public class MusicManager {
 
         prepared = false;
     }
+    public void resume() {
+
+        if (mediaPlayer == null || !prepared) {
+            return;
+        }
+
+        try {
+
+            if (!mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
 }

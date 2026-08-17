@@ -1,0 +1,64 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="280dp"
+    android:viewportWidth="280"
+    android:viewportHeight="280">
+
+    <!-- Vinyl -->
+    <path
+        android:fillColor="#15121A"
+        android:pathData="M140,0
+        A140,140 0,1 0,140,280
+        A140,140 0,1 0,140,0" />
+
+    <!-- Outer groove -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#302A36"
+        android:strokeWidth="2"
+        android:pathData="M140,15
+        A125,125 0,1 0,140,265
+        A125,125 0,1 0,140,15" />
+
+    <!-- Groove -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#29242F"
+        android:strokeWidth="2"
+        android:pathData="M140,30
+        A110,110 0,1 0,140,250
+        A110,110 0,1 0,140,30" />
+
+    <!-- Groove -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#332D38"
+        android:strokeWidth="2"
+        android:pathData="M140,45
+        A95,95 0,1 0,140,235
+        A95,95 0,1 0,140,45" />
+
+    <!-- Groove -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#29242F"
+        android:strokeWidth="2"
+        android:pathData="M140,60
+        A80,80 0,1 0,140,220
+        A80,80 0,1 0,140,60" />
+
+    <!-- Center -->
+    <path
+        android:fillColor="#6D2C91"
+        android:pathData="M140,92
+        A48,48 0,1 0,140,188
+        A48,48 0,1 0,140,92" />
+
+    <!-- Center hole -->
+    <path
+        android:fillColor="#0D071A"
+        android:pathData="M140,130
+        A10,10 0,1 0,140,150
+        A10,10 0,1 0,140,130" />
+
+</vector>

@@ -46,7 +46,15 @@
                     android:text="Artist"
                     android:textSize="14sp" />
 
+
             </LinearLayout>
+            <ImageView
+                android:id="@+id/favoriteButton"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:padding="5dp"
+                android:src="@drawable/heart"
+                android:contentDescription="Favorite" />
 
         </LinearLayout>
 

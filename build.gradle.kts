@@ -3,4 +3,6 @@ plugins {
     alias(libs.plugins.android.application) apply false
     id("com.google.gms.google-services") version "4.5.0" apply false
     id ("org.jetbrains.kotlin.android") version "1.9.22" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
+    id("com.google.firebase.crashlytics") version "3.0.8" apply false
 }
