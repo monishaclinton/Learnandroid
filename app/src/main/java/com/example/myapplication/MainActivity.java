@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.util.Log;
@@ -20,8 +21,11 @@ import androidx.credentials.exceptions.GetCredentialException;
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -47,31 +51,49 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Find views
+        // =========================================================
+        // FIND VIEWS
+        // =========================================================
+
         signup = findViewById(R.id.signIn);
         email = findViewById(R.id.login_useremail);
         password = findViewById(R.id.login_password);
         googleSignIn = findViewById(R.id.google_login);
         loginButton = findViewById(R.id.login_user);
 
-        // Initialize Firestore
+        // =========================================================
+        // FIRESTORE
+        // =========================================================
+
         db = FirebaseFirestore.getInstance();
 
-        // Google Sign-In
-        googleSignIn.setOnClickListener(v -> triggerGoogleSignIn());
+        // =========================================================
+        // GOOGLE LOGIN
+        // =========================================================
 
-        // Signup
+        googleSignIn.setOnClickListener(v ->
+                triggerGoogleSignIn()
+        );
+
+        // =========================================================
+        // SIGN UP
+        // =========================================================
+
         signup.setOnClickListener(v -> {
 
-            Intent intent = new Intent(
-                    MainActivity.this,
-                    Register.class
-            );
+            Intent intent =
+                    new Intent(
+                            MainActivity.this,
+                            Register.class
+                    );
 
             startActivity(intent);
         });
 
-        // Normal email/password login
+        // =========================================================
+        // NORMAL LOGIN
+        // =========================================================
+
         loginButton.setOnClickListener(v -> {
 
             if (validateLogin()) {
@@ -80,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                         email.getText().toString().trim();
 
                 String passwordValue =
-                        password.getText().toString().trim();
+                        password.getText().toString();
 
                 checkLoginCredentials(
                         emailValue,
@@ -89,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 
     // =========================================================
     // GOOGLE SIGN-IN
@@ -113,7 +136,9 @@ public class MainActivity extends AppCompatActivity {
         GetCredentialRequest request =
                 new GetCredentialRequest.Builder()
 
-                        .addCredentialOption(googleIdOption)
+                        .addCredentialOption(
+                                googleIdOption
+                        )
 
                         .build();
 
@@ -163,90 +188,358 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+
     // =========================================================
-    // HANDLE GOOGLE SIGN-IN RESULT
+    // HANDLE GOOGLE LOGIN
     // =========================================================
 
     private void handleSignInSuccess(
             GetCredentialResponse result) {
 
-        if (result.getCredential() instanceof CustomCredential
-                && result.getCredential()
-                .getType()
-                .equals(
-                        GoogleIdTokenCredential
-                                .TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                )) {
+        if (!(result.getCredential()
+                instanceof CustomCredential)) {
 
-            try {
+            Log.e(
+                    TAG,
+                    "Unexpected credential"
+            );
 
-                GoogleIdTokenCredential credential =
-                        GoogleIdTokenCredential.createFrom(
-                                result.getCredential().getData()
-                        );
+            return;
+        }
 
-                String idToken =
-                        credential.getIdToken();
+        CustomCredential customCredential =
+                (CustomCredential) result.getCredential();
 
-                String userEmail =
-                        credential.getId();
-
-                String displayName =
-                        credential.getDisplayName();
-
-                Log.d(
-                        TAG,
-                        "Welcome "
-                                + displayName
-                                + " ("
-                                + userEmail
-                                + ")"
-                );
-
-                runOnUiThread(() -> {
-
-                    Toast.makeText(
-                            MainActivity.this,
-                            "Welcome " + displayName,
-                            Toast.LENGTH_SHORT
-                    ).show();
-
-                    Intent intent = new Intent(
-                            MainActivity.this,
-                            HomePage.class
-                    );
-
-                    startActivity(intent);
-
-                    finish();
-                });
-
-            } catch (Exception e) {
-
-                Log.e(
-                        TAG,
-                        "Error parsing Google credential",
-                        e
-                );
-
-                runOnUiThread(() -> {
-
-                    Toast.makeText(
-                            MainActivity.this,
-                            "Google sign-in error",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
-            }
-
-        } else {
+        if (!customCredential.getType().equals(
+                GoogleIdTokenCredential
+                        .TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+        )) {
 
             Log.e(
                     TAG,
                     "Unexpected credential type"
             );
+
+            return;
+        }
+
+        try {
+
+            GoogleIdTokenCredential credential =
+                    GoogleIdTokenCredential.createFrom(
+                            customCredential.getData()
+                    );
+
+            // =====================================================
+            // GET GOOGLE DETAILS
+            // =====================================================
+
+            String userEmail =
+                    credential.getId();
+
+            String displayName =
+                    credential.getDisplayName();
+
+            String profilePicture = null;
+
+            if (credential.getProfilePictureUri() != null) {
+
+                profilePicture =
+                        credential
+                                .getProfilePictureUri()
+                                .toString();
+            }
+
+            Log.d(
+                    TAG,
+                    "Google Name = " + displayName
+            );
+
+            Log.d(
+                    TAG,
+                    "Google Email = " + userEmail
+            );
+
+            Log.d(
+                    TAG,
+                    "Google Photo = " + profilePicture
+            );
+
+
+            // =====================================================
+            // SAVE / UPDATE GOOGLE USER IN FIRESTORE
+            // =====================================================
+
+            saveGoogleUserToFirestore(
+                    userEmail,
+                    displayName,
+                    profilePicture
+            );
+
+        } catch (Exception e) {
+
+            Log.e(
+                    TAG,
+                    "Error parsing Google credential",
+                    e
+            );
+
+            runOnUiThread(() -> {
+
+                Toast.makeText(
+                        MainActivity.this,
+                        "Google sign-in error",
+                        Toast.LENGTH_SHORT
+                ).show();
+            });
         }
     }
+
+
+    // =========================================================
+    // SAVE GOOGLE USER TO FIRESTORE
+    // =========================================================
+
+    private void saveGoogleUserToFirestore(
+            String userEmail,
+            String displayName,
+            String profilePicture) {
+
+        db.collection("Users")
+                .whereEqualTo(
+                        "email",
+                        userEmail
+                )
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+
+                    // =================================================
+                    // USER DOES NOT EXIST
+                    // =================================================
+
+                    if (querySnapshot.isEmpty()) {
+
+                        Map<String, Object> user =
+                                new HashMap<>();
+
+                        user.put(
+                                "name",
+                                displayName
+                        );
+
+                        user.put(
+                                "email",
+                                userEmail
+                        );
+
+                        user.put(
+                                "loginType",
+                                "Google"
+                        );
+
+                        if (profilePicture != null) {
+
+                            user.put(
+                                    "profilePicture",
+                                    profilePicture
+                            );
+                        }
+
+                        db.collection("Users")
+                                .add(user)
+                                .addOnSuccessListener(
+                                        documentReference -> {
+
+                                            Log.d(
+                                                    TAG,
+                                                    "New Google user saved"
+                                            );
+
+                                            saveGoogleUserLocally(
+                                                    userEmail,
+                                                    displayName,
+                                                    profilePicture
+                                            );
+                                        }
+                                )
+                                .addOnFailureListener(e -> {
+
+                                    Log.e(
+                                            TAG,
+                                            "Failed to save Google user",
+                                            e
+                                    );
+
+                                    Toast.makeText(
+                                            MainActivity.this,
+                                            "Failed to save Google user",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                });
+
+                    }
+
+                    // =================================================
+                    // USER ALREADY EXISTS
+                    // =================================================
+
+                    else {
+
+                        DocumentSnapshot document =
+                                querySnapshot
+                                        .getDocuments()
+                                        .get(0);
+
+                        Map<String, Object> update =
+                                new HashMap<>();
+
+                        update.put(
+                                "name",
+                                displayName
+                        );
+
+                        update.put(
+                                "email",
+                                userEmail
+                        );
+
+                        update.put(
+                                "loginType",
+                                "Google"
+                        );
+
+                        if (profilePicture != null) {
+
+                            update.put(
+                                    "profilePicture",
+                                    profilePicture
+                            );
+                        }
+
+                        db.collection("Users")
+                                .document(
+                                        document.getId()
+                                )
+                                .update(update)
+                                .addOnSuccessListener(
+                                        unused -> {
+
+                                            Log.d(
+                                                    TAG,
+                                                    "Existing Google user updated"
+                                            );
+
+                                            saveGoogleUserLocally(
+                                                    userEmail,
+                                                    displayName,
+                                                    profilePicture
+                                            );
+                                        }
+                                )
+                                .addOnFailureListener(e -> {
+
+                                    Log.e(
+                                            TAG,
+                                            "Failed to update Google user",
+                                            e
+                                    );
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+
+                    Log.e(
+                            TAG,
+                            "Error checking Google user",
+                            e
+                    );
+
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Firebase error: "
+                                        + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show();
+                    });
+                });
+    }
+
+
+    // =========================================================
+    // SAVE GOOGLE USER LOCALLY
+    // =========================================================
+
+    private void saveGoogleUserLocally(
+            String userEmail,
+            String displayName,
+            String profilePicture) {
+
+        SharedPreferences preferences =
+                getSharedPreferences(
+                        "UserPrefs",
+                        MODE_PRIVATE
+                );
+
+        SharedPreferences.Editor editor =
+                preferences.edit();
+
+        editor.putString(
+                "name",
+                displayName
+        );
+
+        editor.putString(
+                "email",
+                userEmail
+        );
+
+        if (profilePicture != null) {
+
+            editor.putString(
+                    "profilePicture",
+                    profilePicture
+            );
+        }
+
+        editor.putBoolean(
+                "isGoogleUser",
+                true
+        );
+
+        editor.putBoolean(
+                "isLoggedIn",
+                true
+        );
+
+        editor.apply();
+
+
+        // =====================================================
+        // OPEN HOME
+        // =====================================================
+
+        runOnUiThread(() -> {
+
+            Toast.makeText(
+                    MainActivity.this,
+                    "Welcome " + displayName,
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            Intent intent =
+                    new Intent(
+                            MainActivity.this,
+                            HomePage.class
+                    );
+
+            startActivity(intent);
+
+            finish();
+        });
+    }
+
 
     // =========================================================
     // VALIDATE LOGIN
@@ -258,9 +551,12 @@ public class MainActivity extends AppCompatActivity {
                 email.getText().toString().trim();
 
         String passwordValue =
-                password.getText().toString().trim();
+                password.getText().toString();
 
-        // Email empty
+        // =====================================================
+        // EMAIL
+        // =====================================================
+
         if (emailValue.isEmpty()) {
 
             email.setError(
@@ -272,7 +568,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
 
-        // Email format
         if (!isValidEmail(emailValue)) {
 
             email.setError(
@@ -284,7 +579,10 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
 
-        // Password empty
+        // =====================================================
+        // PASSWORD
+        // =====================================================
+
         if (passwordValue.isEmpty()) {
 
             password.setError(
@@ -296,7 +594,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
 
-        // Password length
         if (passwordValue.length() < 6) {
 
             password.setError(
@@ -311,8 +608,9 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+
     // =========================================================
-    // FIRESTORE LOGIN
+    // FIRESTORE EMAIL/PASSWORD LOGIN
     // =========================================================
 
     private void checkLoginCredentials(
@@ -320,50 +618,160 @@ public class MainActivity extends AppCompatActivity {
             String passwordValue) {
 
         db.collection("Users")
-
                 .whereEqualTo(
                         "email",
                         emailValue
                 )
-
-                .whereEqualTo(
-                        "password",
-                        passwordValue
-                )
-
                 .get()
-
                 .addOnSuccessListener(querySnapshot -> {
 
-                    if (!querySnapshot.isEmpty()) {
+                    // =================================================
+                    // USER NOT FOUND
+                    // =================================================
 
-                        Toast.makeText(
-                                MainActivity.this,
-                                "Login Successful",
-                                Toast.LENGTH_SHORT
-                        ).show();
-
-                        Intent intent =
-                                new Intent(
-                                        MainActivity.this,
-                                        HomePage.class
-                                );
-
-                        startActivity(intent);
-
-                        finish();
-
-                    } else {
+                    if (querySnapshot.isEmpty()) {
 
                         Toast.makeText(
                                 MainActivity.this,
                                 "Invalid email or password",
                                 Toast.LENGTH_SHORT
                         ).show();
-                    }
-                })
 
+                        return;
+                    }
+
+
+                    // =================================================
+                    // GET USER DOCUMENT
+                    // =================================================
+
+                    DocumentSnapshot document =
+                            querySnapshot
+                                    .getDocuments()
+                                    .get(0);
+
+
+                    // =================================================
+                    // GET FIRESTORE PASSWORD
+                    // =================================================
+
+                    String firebasePassword =
+                            document.getString(
+                                    "password"
+                            );
+
+
+                    if (firebasePassword == null) {
+
+                        Toast.makeText(
+                                MainActivity.this,
+                                "This account uses Google login",
+                                Toast.LENGTH_SHORT
+                        ).show();
+
+                        return;
+                    }
+
+
+                    // =================================================
+                    // CHECK FIRESTORE PASSWORD
+                    // =================================================
+
+                    if (!passwordValue.equals(
+                            firebasePassword
+                    )) {
+
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Invalid email or password",
+                                Toast.LENGTH_SHORT
+                        ).show();
+
+                        return;
+                    }
+
+
+                    // =================================================
+                    // LOGIN SUCCESS
+                    // =================================================
+
+                    String name =
+                            document.getString(
+                                    "name"
+                            );
+
+                    String firestoreEmail =
+                            document.getString(
+                                    "email"
+                            );
+
+
+                    // =================================================
+                    // SAVE ONLY USER DETAILS LOCALLY
+                    // =================================================
+
+                    SharedPreferences preferences =
+                            getSharedPreferences(
+                                    "UserPrefs",
+                                    MODE_PRIVATE
+                            );
+
+                    preferences.edit()
+                            .putString(
+                                    "name",
+                                    name
+                            )
+                            .putString(
+                                    "email",
+                                    firestoreEmail
+                            )
+                            .putBoolean(
+                                    "isLoggedIn",
+                                    true
+                            )
+                            .putBoolean(
+                                    "isGoogleUser",
+                                    false
+                            )
+                            .apply();
+
+
+                    Log.d(
+                            "USER_DATA",
+                            "Name = " + name
+                    );
+
+                    Log.d(
+                            "USER_DATA",
+                            "Email = "
+                                    + firestoreEmail
+                    );
+
+
+                    Toast.makeText(
+                            MainActivity.this,
+                            "Login Successful",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+
+                    Intent intent =
+                            new Intent(
+                                    MainActivity.this,
+                                    HomePage.class
+                            );
+
+                    startActivity(intent);
+
+                    finish();
+                })
                 .addOnFailureListener(e -> {
+
+                    Log.e(
+                            "LOGIN",
+                            "Firestore login error",
+                            e
+                    );
 
                     Toast.makeText(
                             MainActivity.this,
@@ -373,6 +781,7 @@ public class MainActivity extends AppCompatActivity {
                     ).show();
                 });
     }
+
 
     // =========================================================
     // EMAIL VALIDATION
@@ -384,6 +793,8 @@ public class MainActivity extends AppCompatActivity {
         String emailPattern =
                 "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}";
 
-        return emailValue.matches(emailPattern);
+        return emailValue.matches(
+                emailPattern
+        );
     }
 }

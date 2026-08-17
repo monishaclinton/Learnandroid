@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -192,12 +191,12 @@ public class HomePage extends AppCompatActivity {
 
 
                             @Override
-                            public void onSettingsClick() {
+                            public void onFavouritesClick() {
 
                                 Intent intent =
                                         new Intent(
                                                 HomePage.this,
-                                                Settings.class
+                                                Favourites.class
                                         );
 
                                 startActivity(intent);
@@ -233,7 +232,9 @@ public class HomePage extends AppCompatActivity {
         // =========================================
 
         adapter = new AudioAdapter(
+                HomePage.this,
                 audioList,
+
                 audio -> {
 
                     // =================================

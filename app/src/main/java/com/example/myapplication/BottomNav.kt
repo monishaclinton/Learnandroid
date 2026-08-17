@@ -14,7 +14,7 @@ class BottomNav {
     interface NavigationListener {
         fun onHomeClick()
         fun onProfileClick()
-        fun onSettingsClick()
+        fun onFavouritesClick()
     }
 
     fun create(
@@ -54,15 +54,15 @@ class BottomNav {
         )
 
         // SETTINGS
-        val settings = createNavItem(
+        val favourites = createNavItem(
             activity,
-            R.drawable.settings,
-            "Settings"
+            R.drawable.heart_liked,
+            "Favourites"
         )
 
         navigation.addView(home)
         navigation.addView(profile)
-        navigation.addView(settings)
+     navigation.addView(favourites)
 
         // Click listeners
         home.setOnClickListener {
@@ -73,8 +73,8 @@ class BottomNav {
             listener.onProfileClick()
         }
 
-        settings.setOnClickListener {
-            listener.onSettingsClick()
+        favourites.setOnClickListener {
+            listener.onFavouritesClick()
         }
 
         return navigation

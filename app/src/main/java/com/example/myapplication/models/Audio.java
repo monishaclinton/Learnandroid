@@ -13,7 +13,7 @@ public class Audio {
         this.path = path;
         this.albumArt=albumArt;
     }
-
+    private boolean favorite;
     public String getTitle() {
         return title;
     }
@@ -28,4 +28,11 @@ public class Audio {
 
     public String getAlbumArt(){return albumArt;}
 
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
+    }
 }

@@ -62,7 +62,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 
-        android:text="User Name"
+
 
         android:textSize="22sp"
         android:textStyle="bold"
@@ -82,12 +82,10 @@
 
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
-        android:text="user@gmail.com"
-
         android:textSize="15sp"
         android:textColor="#777777"
-
+        android:clickable="true"
+        android:focusable="true"
         android:gravity="center"
 
         android:layout_marginTop="5dp" />
@@ -111,52 +109,19 @@
     <!-- EDIT PROFILE -->
     <!-- =============================== -->
 
-    <LinearLayout
-        android:id="@+id/editProfile"
-
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-
-        android:clickable="true"
-        android:focusable="true">
-
-
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-
-            android:src="@drawable/ic_edit"
-            app:tint="#482050" />
-
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-
-            android:layout_weight="1"
-
-            android:text="Edit Profile"
-            android:textSize="17sp"
-            android:textColor="#333333"
-
-            android:layout_marginStart="15dp" />
-
-
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-
-            android:src="@drawable/ic_media_play" />
-
-    </LinearLayout>
 
 
     <!-- =============================== -->
     <!-- SETTINGS -->
     <!-- =============================== -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Edit Password"
+        android:textColor="@color/black"
+        android:layout_gravity="left"/>
+
+
 
     <LinearLayout
         android:id="@+id/profileSettings"
@@ -171,20 +136,13 @@
         android:focusable="true">
 
 
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
 
-            android:src="@drawable/settings"
-            app:tint="#482050" />
-
-
-        <TextView
+        <EditText
             android:layout_width="0dp"
             android:layout_height="wrap_content"
 
             android:layout_weight="1"
-
+            android:id="@+id/editPassword"
             android:text="Edit Password"
             android:textSize="17sp"
             android:textColor="#333333"
@@ -193,11 +151,11 @@
 
 
         <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-
-            android:src="@drawable/ic_media_play" />
-
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:id="@+id/editPasswordButton"
+            android:src="@drawable/ic_edit"
+            app:tint="#482050" />
     </LinearLayout>
 
 

@@ -55,7 +55,7 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".Settings"
+            android:name=".Favourites"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>
