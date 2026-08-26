@@ -64,6 +64,17 @@ public class AudioAdapter
 
         holder.title.setText(audio.getTitle());
         holder.artist.setText(audio.getArtist());
+        holder.itemView.setAlpha(0f);
+        holder.itemView.setScaleX(0.9f);
+        holder.itemView.setScaleY(0.9f);
+
+        holder.itemView.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(350)
+                .setStartDelay(position * 40L)
+                .start();
 
         // Album art
         if (audio.getAlbumArt() != null
@@ -78,14 +89,14 @@ public class AudioAdapter
             } catch (Exception e) {
 
                 holder.albumArt.setImageResource(
-                        R.drawable.ic_media_play
+                        R.drawable.music_ic_app
                 );
             }
 
         } else {
 
             holder.albumArt.setImageResource(
-                    R.drawable.ic_media_play
+                    R.drawable.music_ic_app
             );
         }
 
@@ -128,6 +139,22 @@ public class AudioAdapter
                                 !audio.isFavorite();
 
                         audio.setFavorite(newState);
+                        holder.favoriteButton.animate()
+                                .scaleX(1.35f)
+                                .scaleY(1.35f)
+                                .setDuration(120)
+                                .withEndAction(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+                                        holder.favoriteButton.animate()
+                                                .scaleX(1.0f)
+                                                .scaleY(1.0f)
+                                                .setDuration(120)
+                                                .start();
+                                    }
+                                })
+                                .start();
 
                         if (newState) {
 

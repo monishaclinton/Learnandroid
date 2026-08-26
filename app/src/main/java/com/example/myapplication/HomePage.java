@@ -10,33 +10,28 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.MediaStore;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication.models.Audio;
+import com.example.myapplication.models.OnlineSongModel;
+
+import com.example.myapplication.repository.OnlineSongRepository;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class HomePage extends AppCompatActivity {
 
@@ -46,7 +41,6 @@ public class HomePage extends AppCompatActivity {
 
     private RecyclerView recyclerView;
 
-    private BluetoothReceiver bluetoothReceiver;
 
     private ArrayList<Audio> audioList;
 
@@ -54,22 +48,29 @@ public class HomePage extends AppCompatActivity {
 
 
     // =========================================
-    // PLAYER VIEWS
+    // ONLINE SONG REPOSITORY
     // =========================================
 
-    private SeekBar seekBar;
+    private OnlineSongRepository onlineSongRepository;
 
-    private TextView songName;
 
-    private ImageView songimg;
+    // =========================================
+    // JAMENDO CLIENT ID
+    // =========================================
+    //
+    // Replace this with your actual Jamendo
+    // client ID.
+    //
 
-    private Button playButton;
+    private static final String JAMENDO_CLIENT_ID =
+            "079d07a7";
 
-    private Button pauseButton;
 
-    private LinearLayout playerControls;
+    // =========================================
+    // BLUETOOTH
+    // =========================================
 
-    private CardView playerCard;
+    private BluetoothReceiver bluetoothReceiver;
 
 
     // =========================================
@@ -80,6 +81,22 @@ public class HomePage extends AppCompatActivity {
 
 
     // =========================================
+    // PLAYER BOTTOM SHEET
+    // =========================================
+
+    private PlayerBottomSheet playerBottomSheet;
+
+
+    // =========================================
+    // CURRENT SONG
+    // =========================================
+
+    private Audio currentSong;
+
+    private int currentSongIndex = -1;
+
+
+    // =========================================
     // RECENT SONG STORE
     // =========================================
 
@@ -87,32 +104,10 @@ public class HomePage extends AppCompatActivity {
 
 
     // =========================================
-    // HANDLER
-    // =========================================
-
-    private final Handler handler =
-            new Handler(Looper.getMainLooper());
-
-
-    // =========================================
     // PERMISSION
     // =========================================
 
     private static final int REQUEST_AUDIO_PERMISSION = 100;
-
-
-    // =========================================
-    // PLAYER CARD
-    // =========================================
-
-    private boolean playerCardVisible = false;
-
-
-    // =========================================
-    // CURRENT SONG
-    // =========================================
-
-    private int currentSongIndex = -1;
 
 
     // =========================================
@@ -140,6 +135,14 @@ public class HomePage extends AppCompatActivity {
 
 
         // =========================================
+        // ONLINE SONG REPOSITORY
+        // =========================================
+
+        onlineSongRepository =
+                new OnlineSongRepository();
+
+
+        // =========================================
         // RECENT SONG STORE
         // =========================================
 
@@ -150,37 +153,15 @@ public class HomePage extends AppCompatActivity {
 
 
         // =========================================
-        // BLUETOOTH
+        // AUDIO LIST
         // =========================================
 
-        registerBluetoothReceiver();
-
-
-        // =========================================
-        // ADS
-        // =========================================
-
-        MobileAds.initialize(
-                this,
-                initializationStatus -> {
-
-                    AdView adView =
-                            findViewById(R.id.adView);
-
-                    if (adView != null) {
-
-                        AdRequest adRequest =
-                                new AdRequest.Builder()
-                                        .build();
-
-                        adView.loadAd(adRequest);
-                    }
-                }
-        );
+        audioList =
+                new ArrayList<>();
 
 
         // =========================================
-        // FIND VIEWS
+        // RECYCLER VIEW
         // =========================================
 
         recyclerView =
@@ -188,85 +169,16 @@ public class HomePage extends AppCompatActivity {
                         R.id.recyclerView
                 );
 
-        seekBar =
-                findViewById(
-                        R.id.seekBar
-                );
+        if (recyclerView == null) {
 
-        songName =
-                findViewById(
-                        R.id.songName
-                );
+            Toast.makeText(
+                    this,
+                    "RecyclerView not found",
+                    Toast.LENGTH_LONG
+            ).show();
 
-        songimg =
-                findViewById(
-                        R.id.songimg
-                );
-
-        playerCard =
-                findViewById(
-                        R.id.playerCard
-                );
-
-        playButton =
-                findViewById(
-                        R.id.playButton
-                );
-
-        pauseButton =
-                findViewById(
-                        R.id.pauseButton
-                );
-
-        playerControls =
-                findViewById(
-                        R.id.playerControls
-                );
-
-
-        // =========================================
-        // INITIAL PLAYER STATE
-        // =========================================
-
-        if (playerCard != null) {
-
-            playerCard.setVisibility(
-                    View.GONE
-            );
+            return;
         }
-
-        playerCardVisible = false;
-
-
-        if (playButton != null) {
-
-            playButton.setVisibility(
-                    View.VISIBLE
-            );
-        }
-
-
-        if (pauseButton != null) {
-
-            pauseButton.setVisibility(
-                    View.GONE
-            );
-        }
-
-
-        // =========================================
-        // BOTTOM NAVIGATION
-        // =========================================
-
-        setupBottomNavigation();
-
-
-        // =========================================
-        // AUDIO LIST
-        // =========================================
-
-        audioList =
-                new ArrayList<>();
 
 
         recyclerView.setLayoutManager(
@@ -290,9 +202,17 @@ public class HomePage extends AppCompatActivity {
                             }
 
 
-                            // =================================
-                            // FIND SONG INDEX
-                            // =================================
+                            // -------------------------
+                            // CURRENT SONG
+                            // -------------------------
+
+                            currentSong =
+                                    audio;
+
+
+                            // -------------------------
+                            // CURRENT INDEX
+                            // -------------------------
 
                             currentSongIndex =
                                     findSongIndex(
@@ -300,61 +220,29 @@ public class HomePage extends AppCompatActivity {
                                     );
 
 
-                            // =================================
-                            // SHOW PLAYER CARD
-                            // =================================
-
-                            showPlayerCard();
-
-
-                            // =================================
-                            // SONG TITLE
-                            // =================================
-
-                            songName.setText(
-                                    audio.getTitle()
-                            );
-
-
-                            // =================================
-                            // ALBUM IMAGE
-                            // =================================
-
-                            loadAlbumImage(
-                                    audio
-                            );
-
-
-                            // =================================
-                            // SAVE TO RECENTLY VIEWED
-                            // =================================
+                            // -------------------------
+                            // SAVE RECENT
+                            // -------------------------
 
                             saveToRecentlyViewed(
                                     audio
                             );
 
 
-                            // =================================
-                            // OPEN FULL MUSIC PLAYER
-                            // =================================
-
-                            songimg.setOnClickListener(
-                                    v -> {
-
-                                        openMusicPlayer(
-                                                audio
-                                        );
-                                    }
-                            );
-
-
-                            // =================================
+                            // -------------------------
                             // PLAY SONG
-                            // =================================
+                            // -------------------------
 
                             playSong(
                                     audio
                             );
+
+
+                            // -------------------------
+                            // OPEN BOTTOM SHEET
+                            // -------------------------
+
+                            openPlayerBottomSheet();
                         }
                 );
 
@@ -365,129 +253,704 @@ public class HomePage extends AppCompatActivity {
 
 
         // =========================================
-        // PLAY BUTTON
+        // BLUETOOTH
         // =========================================
 
-        playButton.setOnClickListener(
-                v -> {
-
-                    if (!musicManager.exists()) {
-
-                        Toast.makeText(
-                                HomePage.this,
-                                "Select a song first",
-                                Toast.LENGTH_SHORT
-                        ).show();
-
-                        return;
-                    }
-
-
-                    musicManager.start();
-
-
-                    playButton.setVisibility(
-                            View.GONE
-                    );
-
-                    pauseButton.setVisibility(
-                            View.VISIBLE
-                    );
-
-
-                    updateSeekBar();
-                }
-        );
+        registerBluetoothReceiver();
 
 
         // =========================================
-        // PAUSE BUTTON
+        // ADS
         // =========================================
 
-        pauseButton.setOnClickListener(
-                v -> {
-
-                    if (!musicManager.exists()) {
-                        return;
-                    }
-
-
-                    musicManager.pause();
-
-
-                    playButton.setVisibility(
-                            View.VISIBLE
-                    );
-
-                    pauseButton.setVisibility(
-                            View.GONE
-                    );
-
-
-                    handler.removeCallbacks(
-                            updateSeekBarRunnable
-                    );
-                }
-        );
+        initializeAds();
 
 
         // =========================================
-        // SEEK BAR
+        // BOTTOM NAVIGATION
         // =========================================
 
-        seekBar.setOnSeekBarChangeListener(
-                new SeekBar.OnSeekBarChangeListener() {
-
-                    @Override
-                    public void onProgressChanged(
-                            SeekBar seekBar,
-                            int progress,
-                            boolean fromUser
-                    ) {
-
-                        if (fromUser &&
-                                musicManager.exists()) {
-
-                            musicManager.seekTo(
-                                    progress
-                            );
-                        }
-                    }
-
-
-                    @Override
-                    public void onStartTrackingTouch(
-                            SeekBar seekBar
-                    ) {
-                    }
-
-
-                    @Override
-                    public void onStopTrackingTouch(
-                            SeekBar seekBar
-                    ) {
-
-                        if (musicManager.exists()) {
-
-                            musicManager.seekTo(
-                                    seekBar.getProgress()
-                            );
-                        }
-                    }
-                }
-        );
+        setupBottomNavigation();
 
 
         // =========================================
-        // CHECK PERMISSION
+        // CHECK LOCAL AUDIO PERMISSION
         // =========================================
 
         checkPermission();
+
+
+        // =========================================
+        // LOAD JAMENDO SONGS
+        // =========================================
+
+        loadOnlineSongs();
     }
 
 
     // =========================================
-    // SAVE SONG TO RECENTLY VIEWED
+    // INITIALIZE ADS
+    // =========================================
+
+    private void initializeAds() {
+
+        MobileAds.initialize(
+                this,
+                initializationStatus -> {
+
+                    AdView adView =
+                            findViewById(
+                                    R.id.adView
+                            );
+
+                    if (adView == null) {
+                        return;
+                    }
+
+                    AdRequest adRequest =
+                            new AdRequest.Builder()
+                                    .build();
+
+                    adView.loadAd(
+                            adRequest
+                    );
+                }
+        );
+    }
+
+
+    // =========================================
+    // LOAD ONLINE SONGS
+    // =========================================
+    //
+    // Repository Pattern:
+    //
+    // HomePage
+    //     ↓
+    // OnlineSongRepository
+    //     ↓
+    // JamedoApi
+    //     ↓
+    // Retrofit
+    //     ↓
+    // Jamendo API
+    //
+
+    private void loadOnlineSongs() {
+
+        if (onlineSongRepository == null) {
+
+            return;
+        }
+
+
+        // =========================================
+        // CHECK CLIENT ID
+        // =========================================
+
+        if (JAMENDO_CLIENT_ID == null
+                || JAMENDO_CLIENT_ID.isEmpty()
+                || JAMENDO_CLIENT_ID.equals(
+                "YOUR_JAMENDO_CLIENT_ID"
+        )) {
+
+            Toast.makeText(
+                    this,
+                    "Add your Jamendo Client ID",
+                    Toast.LENGTH_LONG
+            ).show();
+
+            return;
+        }
+
+
+        // =========================================
+        // GET SONGS FROM REPOSITORY
+        // =========================================
+
+        onlineSongRepository.getSongs(
+
+                JAMENDO_CLIENT_ID,
+
+                new OnlineSongRepository.RepositoryCallback() {
+
+                    @Override
+                    public void onSuccess(
+                            List<OnlineSongModel> onlineSongs
+                    ) {
+
+                        if (onlineSongs == null) {
+                            return;
+                        }
+
+
+                        // =====================================
+                        // CONVERT ONLINE SONGS TO AUDIO
+                        // =====================================
+
+                        for (
+                                OnlineSongModel onlineSong
+                                : onlineSongs
+                        ) {
+
+                            if (onlineSong == null) {
+                                continue;
+                            }
+
+
+                            // =================================
+                            // CHECK AUDIO URL
+                            // =================================
+
+                            if (
+                                    onlineSong.getAudioUrl()
+                                            == null
+                                            ||
+                                            onlineSong.getAudioUrl()
+                                                    .isEmpty()
+                            ) {
+
+                                continue;
+                            }
+
+
+                            // =================================
+                            // CREATE AUDIO OBJECT
+                            // =================================
+
+                            Audio audio =
+                                    new Audio(
+
+                                            onlineSong.getTitle(),
+
+                                            onlineSong.getArtist(),
+
+                                            onlineSong.getAudioUrl(),
+
+                                            onlineSong.getAlbumArt()
+                                    );
+
+
+                            // =================================
+                            // ADD TO EXISTING LIST
+                            // =================================
+
+                            audioList.add(
+                                    audio
+                            );
+                        }
+
+
+                        // =====================================
+                        // UPDATE RECYCLER VIEW
+                        // =====================================
+
+                        if (adapter != null) {
+
+                            adapter.notifyDataSetChanged();
+                        }
+                    }
+
+
+                    @Override
+                    public void onError(
+                            String message
+                    ) {
+
+                        Toast.makeText(
+                                HomePage.this,
+                                "Online songs: "
+                                        + message,
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+        );
+    }
+
+
+    // =========================================
+    // PLAY SONG
+    // =========================================
+
+    private void playSong(
+            Audio audio
+    ) {
+
+        if (audio == null) {
+            return;
+        }
+
+
+        if (musicManager == null) {
+            return;
+        }
+
+
+        // =========================================
+        // UPDATE CURRENT SONG
+        // =========================================
+
+        currentSong =
+                audio;
+
+
+        // =========================================
+        // UPDATE INDEX
+        // =========================================
+
+        currentSongIndex =
+                findSongIndex(
+                        audio.getPath()
+                );
+
+
+        // =========================================
+        // SAVE RECENT
+        // =========================================
+
+        saveToRecentlyViewed(
+                audio
+        );
+
+
+        // =========================================
+        // PLAY THROUGH MUSIC MANAGER
+        // =========================================
+
+        musicManager.play(
+
+                HomePage.this,
+
+                audio.getPath(),
+
+                mp -> {
+
+                    if (mp == null) {
+                        return;
+                    }
+
+                    mp.start();
+                },
+
+                mp -> {
+
+                    playNextSong();
+                }
+        );
+    }
+
+
+    // =========================================
+    // OPEN PLAYER BOTTOM SHEET
+    // =========================================
+
+    private void openPlayerBottomSheet() {
+
+        if (currentSong == null) {
+
+            Toast.makeText(
+                    HomePage.this,
+                    "Select a song first",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            return;
+        }
+
+
+        if (musicManager == null) {
+            return;
+        }
+
+
+        // =========================================
+        // DISMISS OLD BOTTOM SHEET
+        // =========================================
+
+        if (playerBottomSheet != null) {
+
+            playerBottomSheet.dismiss();
+
+            playerBottomSheet = null;
+        }
+
+
+        // =========================================
+        // CREATE BOTTOM SHEET
+        // =========================================
+
+        playerBottomSheet =
+                new PlayerBottomSheet(
+
+                        HomePage.this,
+
+                        musicManager,
+
+                        currentSong,
+
+                        // -------------------------
+                        // NEXT
+                        // -------------------------
+
+                        new Runnable() {
+
+                            @Override
+                            public void run() {
+
+                                playNextSong();
+                            }
+                        },
+
+                        // -------------------------
+                        // PREVIOUS
+                        // -------------------------
+
+                        new Runnable() {
+
+                            @Override
+                            public void run() {
+
+                                playPreviousSong();
+                            }
+                        }
+                );
+
+
+        // =========================================
+        // SHOW
+        // =========================================
+
+        playerBottomSheet.show();
+    }
+
+
+    // =========================================
+    // OPEN MUSIC PLAYER FROM BOTTOM SHEET
+    // =========================================
+
+    public void openMusicPlayerFromBottomSheet(
+            Audio audio
+    ) {
+
+        if (audio == null) {
+            return;
+        }
+
+
+        // =========================================
+        // SAVE RECENT
+        // =========================================
+
+        saveToRecentlyViewed(
+                audio
+        );
+
+
+        // =========================================
+        // CREATE INTENT
+        // =========================================
+
+        Intent intent =
+                new Intent(
+                        HomePage.this,
+                        MusicPlayerPage.class
+                );
+
+
+        // =========================================
+        // SONG TITLE
+        // =========================================
+
+        intent.putExtra(
+                "title",
+                audio.getTitle()
+        );
+
+
+        // =========================================
+        // ARTIST
+        // =========================================
+
+        intent.putExtra(
+                "artist",
+                audio.getArtist()
+        );
+
+
+        // =========================================
+        // PATH
+        // =========================================
+
+        intent.putExtra(
+                "path",
+                audio.getPath()
+        );
+
+
+        // =========================================
+        // ALBUM ART
+        // =========================================
+
+        intent.putExtra(
+                "albumArt",
+                audio.getAlbumArt()
+        );
+
+
+        // =========================================
+        // OPEN MUSIC PLAYER
+        // =========================================
+
+        startActivity(
+                intent
+        );
+    }
+
+
+    // =========================================
+    // PLAY NEXT SONG
+    // =========================================
+
+    private void playNextSong() {
+
+        if (audioList == null) {
+            return;
+        }
+
+
+        if (audioList.isEmpty()) {
+            return;
+        }
+
+
+        // =========================================
+        // FIND CURRENT INDEX IF NEEDED
+        // =========================================
+
+        if (currentSongIndex < 0) {
+
+            if (musicManager == null) {
+                return;
+            }
+
+            String currentPath =
+                    musicManager.getCurrentPath();
+
+            currentSongIndex =
+                    findSongIndex(
+                            currentPath
+                    );
+        }
+
+
+        // =========================================
+        // STILL NOT FOUND
+        // =========================================
+
+        if (currentSongIndex < 0) {
+            return;
+        }
+
+
+        // =========================================
+        // LAST SONG
+        // =========================================
+
+        if (currentSongIndex >=
+                audioList.size() - 1) {
+
+            return;
+        }
+
+
+        // =========================================
+        // NEXT INDEX
+        // =========================================
+
+        currentSongIndex++;
+
+
+        Audio nextSong =
+                audioList.get(
+                        currentSongIndex
+                );
+
+
+        if (nextSong == null) {
+            return;
+        }
+
+
+        // =========================================
+        // UPDATE CURRENT SONG
+        // =========================================
+
+        currentSong =
+                nextSong;
+
+
+        // =========================================
+        // PLAY NEXT SONG
+        // =========================================
+
+        playSong(
+                nextSong
+        );
+    }
+
+
+    // =========================================
+    // PLAY PREVIOUS SONG
+    // =========================================
+
+    private void playPreviousSong() {
+
+        if (audioList == null) {
+            return;
+        }
+
+
+        if (audioList.isEmpty()) {
+            return;
+        }
+
+
+        // =========================================
+        // FIND CURRENT INDEX IF NEEDED
+        // =========================================
+
+        if (currentSongIndex < 0) {
+
+            if (musicManager == null) {
+                return;
+            }
+
+            String currentPath =
+                    musicManager.getCurrentPath();
+
+            currentSongIndex =
+                    findSongIndex(
+                            currentPath
+                    );
+        }
+
+
+        // =========================================
+        // STILL NOT FOUND
+        // =========================================
+
+        if (currentSongIndex < 0) {
+            return;
+        }
+
+
+        // =========================================
+        // FIRST SONG
+        // =========================================
+
+        if (currentSongIndex <= 0) {
+
+            currentSongIndex = 0;
+
+        } else {
+
+            currentSongIndex--;
+        }
+
+
+        // =========================================
+        // GET PREVIOUS SONG
+        // =========================================
+
+        Audio previousSong =
+                audioList.get(
+                        currentSongIndex
+                );
+
+
+        if (previousSong == null) {
+            return;
+        }
+
+
+        // =========================================
+        // UPDATE CURRENT SONG
+        // =========================================
+
+        currentSong =
+                previousSong;
+
+
+        // =========================================
+        // PLAY PREVIOUS
+        // =========================================
+
+        playSong(
+                previousSong
+        );
+    }
+
+
+    // =========================================
+    // FIND SONG INDEX
+    // =========================================
+
+    private int findSongIndex(
+            String path
+    ) {
+
+        if (path == null) {
+            return -1;
+        }
+
+
+        if (audioList == null) {
+            return -1;
+        }
+
+
+        for (
+                int i = 0;
+                i < audioList.size();
+                i++
+        ) {
+
+            Audio audio =
+                    audioList.get(i);
+
+
+            if (audio == null) {
+                continue;
+            }
+
+
+            String audioPath =
+                    audio.getPath();
+
+
+            if (audioPath == null) {
+                continue;
+            }
+
+
+            if (path.equals(audioPath)) {
+
+                return i;
+            }
+        }
+
+
+        // =========================================
+        // ALWAYS RETURN A VALUE
+        // =========================================
+
+        return -1;
+    }
+
+
+    // =========================================
+    // SAVE RECENT SONG
     // =========================================
 
     private void saveToRecentlyViewed(
@@ -522,66 +985,15 @@ public class HomePage extends AppCompatActivity {
 
 
     // =========================================
-    // OPEN MUSIC PLAYER
-    // =========================================
-
-    private void openMusicPlayer(
-            Audio audio
-    ) {
-
-        if (audio == null) {
-            return;
-        }
-
-
-        // Save again when opening full player
-        saveToRecentlyViewed(
-                audio
-        );
-
-
-        Intent intent =
-                new Intent(
-                        HomePage.this,
-                        MusicPlayerPage.class
-                );
-
-
-        intent.putExtra(
-                "title",
-                audio.getTitle()
-        );
-
-
-        intent.putExtra(
-                "artist",
-                audio.getArtist()
-        );
-
-
-        intent.putExtra(
-                "path",
-                audio.getPath()
-        );
-
-
-        intent.putExtra(
-                "albumArt",
-                audio.getAlbumArt()
-        );
-
-
-        startActivity(
-                intent
-        );
-    }
-
-
-    // =========================================
     // REGISTER BLUETOOTH RECEIVER
     // =========================================
 
     private void registerBluetoothReceiver() {
+
+        if (bluetoothReceiver != null) {
+            return;
+        }
+
 
         bluetoothReceiver =
                 new BluetoothReceiver();
@@ -608,396 +1020,28 @@ public class HomePage extends AppCompatActivity {
         );
 
 
-        if (Build.VERSION.SDK_INT >=
-                Build.VERSION_CODES.TIRAMISU) {
+        try {
 
-            registerReceiver(
-                    bluetoothReceiver,
-                    filter,
-                    Context.RECEIVER_EXPORTED
-            );
+            if (Build.VERSION.SDK_INT >=
+                    Build.VERSION_CODES.TIRAMISU) {
 
-        } else {
-
-            registerReceiver(
-                    bluetoothReceiver,
-                    filter
-            );
-        }
-    }
-
-
-    // =========================================
-    // PLAY SONG
-    // =========================================
-
-    private void playSong(
-            Audio audio
-    ) {
-
-        if (audio == null) {
-            return;
-        }
-
-
-        // =========================================
-        // UPDATE CURRENT INDEX
-        // =========================================
-
-        currentSongIndex =
-                findSongIndex(
-                        audio.getPath()
+                registerReceiver(
+                        bluetoothReceiver,
+                        filter,
+                        Context.RECEIVER_EXPORTED
                 );
 
-
-        // =========================================
-        // SAVE TO RECENTLY VIEWED
-        // =========================================
-
-        saveToRecentlyViewed(
-                audio
-        );
-
-
-        // =========================================
-        // UPDATE UI
-        // =========================================
-
-        songName.setText(
-                audio.getTitle()
-        );
-
-
-        loadAlbumImage(
-                audio
-        );
-
-
-        // =========================================
-        // MUSIC MANAGER
-        // =========================================
-
-        musicManager.play(
-
-                HomePage.this,
-
-                audio.getPath(),
-
-                mp -> {
-
-                    seekBar.setMax(
-                            mp.getDuration()
-                    );
-
-
-                    mp.start();
-
-
-                    playButton.setVisibility(
-                            View.GONE
-                    );
-
-
-                    pauseButton.setVisibility(
-                            View.VISIBLE
-                    );
-
-
-                    updateSeekBar();
-                },
-
-
-                mp -> {
-
-                    handler.removeCallbacks(
-                            updateSeekBarRunnable
-                    );
-
-
-                    seekBar.setProgress(
-                            0
-                    );
-
-
-                    playNextSong();
-                }
-        );
-    }
-
-
-    // =========================================
-    // PLAY NEXT SONG
-    // =========================================
-
-    private void playNextSong() {
-
-        if (audioList == null ||
-                audioList.isEmpty()) {
-
-            return;
-        }
-
-
-        if (currentSongIndex < 0) {
-
-            String currentPath =
-                    musicManager.getCurrentPath();
-
-
-            currentSongIndex =
-                    findSongIndex(
-                            currentPath
-                    );
-        }
-
-
-        if (currentSongIndex == -1) {
-            return;
-        }
-
-
-        if (currentSongIndex >=
-                audioList.size() - 1) {
-
-            playButton.setVisibility(
-                    View.VISIBLE
-            );
-
-
-            pauseButton.setVisibility(
-                    View.GONE
-            );
-
-
-            seekBar.setProgress(
-                    0
-            );
-
-            return;
-        }
-
-
-        currentSongIndex++;
-
-
-        Audio nextSong =
-                audioList.get(
-                        currentSongIndex
-                );
-
-
-        songName.setText(
-                nextSong.getTitle()
-        );
-
-
-        loadAlbumImage(
-                nextSong
-        );
-
-
-        // Save next song
-        saveToRecentlyViewed(
-                nextSong
-        );
-
-
-        playSong(
-                nextSong
-        );
-    }
-
-
-    // =========================================
-    // FIND SONG INDEX
-    // =========================================
-
-    private int findSongIndex(
-            String path
-    ) {
-
-        if (path == null ||
-                audioList == null) {
-
-            return -1;
-        }
-
-
-        for (int i = 0;
-             i < audioList.size();
-             i++) {
-
-            Audio audio =
-                    audioList.get(i);
-
-
-            if (audio != null &&
-                    path.equals(
-                            audio.getPath()
-                    )) {
-
-                return i;
-            }
-        }
-
-
-        return -1;
-    }
-
-
-    // =========================================
-    // SHOW PLAYER CARD
-    // =========================================
-
-    private void showPlayerCard() {
-
-        if (playerCardVisible) {
-            return;
-        }
-
-
-        playerCardVisible = true;
-
-
-        playerCard.setVisibility(
-                View.VISIBLE
-        );
-
-
-        playerControls.setVisibility(
-                View.VISIBLE
-        );
-
-
-        songimg.setVisibility(
-                View.VISIBLE
-        );
-
-
-        songName.setVisibility(
-                View.VISIBLE
-        );
-
-
-        seekBar.setVisibility(
-                View.VISIBLE
-        );
-
-
-        Animation animation =
-                AnimationUtils.loadAnimation(
-                        this,
-                        R.anim.player_card_enter
-                );
-
-
-        playerCard.startAnimation(
-                animation
-        );
-    }
-
-
-    // =========================================
-    // HIDE PLAYER CARD
-    // =========================================
-
-    private void hidePlayerCard() {
-
-        if (!playerCardVisible) {
-            return;
-        }
-
-
-        playerCardVisible = false;
-
-
-        Animation animation =
-                AnimationUtils.loadAnimation(
-                        this,
-                        R.anim.player_card_exit
-                );
-
-
-        animation.setAnimationListener(
-                new Animation.AnimationListener() {
-
-                    @Override
-                    public void onAnimationStart(
-                            Animation animation
-                    ) {
-                    }
-
-
-                    @Override
-                    public void onAnimationEnd(
-                            Animation animation
-                    ) {
-
-                        playerCard.setVisibility(
-                                View.GONE
-                        );
-
-
-                        playerCard.clearAnimation();
-                    }
-
-
-                    @Override
-                    public void onAnimationRepeat(
-                            Animation animation
-                    ) {
-                    }
-                }
-        );
-
-
-        playerCard.startAnimation(
-                animation
-        );
-    }
-
-
-    // =========================================
-    // LOAD ALBUM IMAGE
-    // =========================================
-
-    private void loadAlbumImage(
-            Audio audio
-    ) {
-
-        if (audio == null) {
-
-            songimg.setImageResource(
-                    R.drawable.ic_media_play
-            );
-
-            return;
-        }
-
-
-        if (audio.getAlbumArt() != null &&
-                !audio.getAlbumArt().isEmpty()) {
-
-            try {
-
-                songimg.setImageURI(
-                        Uri.parse(
-                                audio.getAlbumArt()
-                        )
-                );
-
-            } catch (Exception e) {
-
-                songimg.setImageResource(
-                        R.drawable.ic_media_play
+            } else {
+
+                registerReceiver(
+                        bluetoothReceiver,
+                        filter
                 );
             }
 
-        } else {
+        } catch (Exception e) {
 
-            songimg.setImageResource(
-                    R.drawable.ic_media_play
-            );
+            bluetoothReceiver = null;
         }
     }
 
@@ -1012,6 +1056,11 @@ public class HomePage extends AppCompatActivity {
                 findViewById(
                         R.id.bottomNavContainer
                 );
+
+
+        if (bottomNavContainer == null) {
+            return;
+        }
 
 
         BottomNav nav =
@@ -1043,7 +1092,6 @@ public class HomePage extends AppCompatActivity {
                                                 Profile.class
                                         );
 
-
                                 startActivity(
                                         intent
                                 );
@@ -1058,7 +1106,6 @@ public class HomePage extends AppCompatActivity {
                                                 HomePage.this,
                                                 RecentView.class
                                         );
-
 
                                 startActivity(
                                         intent
@@ -1075,7 +1122,6 @@ public class HomePage extends AppCompatActivity {
                                                 Favourites.class
                                         );
 
-
                                 startActivity(
                                         intent
                                 );
@@ -1084,71 +1130,19 @@ public class HomePage extends AppCompatActivity {
                 );
 
 
-        if (bottomNavContainer != null &&
-                navigation != null) {
-
-            bottomNavContainer.addView(
-                    navigation
-            );
-        }
-    }
-
-
-    // =========================================
-    // UPDATE SEEK BAR
-    // =========================================
-
-    private void updateSeekBar() {
-
-        handler.removeCallbacks(
-                updateSeekBarRunnable
-        );
-
-
-        if (musicManager == null ||
-                !musicManager.exists()) {
-
+        if (navigation == null) {
             return;
         }
 
 
-        seekBar.setMax(
-                musicManager.getDuration()
+        bottomNavContainer.addView(
+                navigation
         );
-
-
-        seekBar.setProgress(
-                musicManager.getCurrentPosition()
-        );
-
-
-        if (musicManager.isPlaying()) {
-
-            handler.postDelayed(
-                    updateSeekBarRunnable,
-                    500
-            );
-        }
     }
 
 
     // =========================================
-    // SEEK BAR RUNNABLE
-    // =========================================
-
-    private final Runnable updateSeekBarRunnable =
-            new Runnable() {
-
-                @Override
-                public void run() {
-
-                    updateSeekBar();
-                }
-            };
-
-
-    // =========================================
-    // PERMISSION
+    // CHECK PERMISSION
     // =========================================
 
     private void checkPermission() {
@@ -1156,63 +1150,94 @@ public class HomePage extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >=
                 Build.VERSION_CODES.TIRAMISU) {
 
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_MEDIA_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED) {
+            if (
+                    ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.READ_MEDIA_AUDIO
+                    )
+                            !=
+                            PackageManager.PERMISSION_GRANTED
+            ) {
 
                 ActivityCompat.requestPermissions(
+
                         this,
+
                         new String[]{
                                 Manifest.permission.READ_MEDIA_AUDIO
                         },
+
                         REQUEST_AUDIO_PERMISSION
                 );
 
-            } else {
-
-                loadAudioFiles();
+                return;
             }
 
-        } else {
 
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED) {
+            loadAudioFiles();
 
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{
-                                Manifest.permission.READ_EXTERNAL_STORAGE
-                        },
-                        REQUEST_AUDIO_PERMISSION
-                );
-
-            } else {
-
-                loadAudioFiles();
-            }
+            return;
         }
+
+
+        // =========================================
+        // ANDROID 12 AND BELOW
+        // =========================================
+
+        if (
+                ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                )
+                        !=
+                        PackageManager.PERMISSION_GRANTED
+        ) {
+
+            ActivityCompat.requestPermissions(
+
+                    this,
+
+                    new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE
+                    },
+
+                    REQUEST_AUDIO_PERMISSION
+            );
+
+            return;
+        }
+
+
+        loadAudioFiles();
     }
 
 
     // =========================================
-    // LOAD AUDIO FILES
+    // LOAD LOCAL AUDIO FILES
     // =========================================
 
     private void loadAudioFiles() {
 
+        if (audioList == null) {
+            return;
+        }
+
+
         Uri collection;
 
+
+        // =========================================
+        // MEDIA STORE URI
+        // =========================================
 
         if (Build.VERSION.SDK_INT >=
                 Build.VERSION_CODES.Q) {
 
             collection =
-                    MediaStore.Audio.Media.getContentUri(
-                            MediaStore.VOLUME_EXTERNAL
-                    );
+                    MediaStore.Audio.Media
+                            .getContentUri(
+                                    MediaStore.VOLUME_EXTERNAL
+                            );
 
         } else {
 
@@ -1221,6 +1246,10 @@ public class HomePage extends AppCompatActivity {
                             .EXTERNAL_CONTENT_URI;
         }
 
+
+        // =========================================
+        // PROJECTION
+        // =========================================
 
         String[] projection = {
 
@@ -1234,24 +1263,40 @@ public class HomePage extends AppCompatActivity {
         };
 
 
+        // =========================================
+        // SELECTION
+        // =========================================
+
         String selection =
                 MediaStore.Audio.Media.IS_MUSIC
                         + " != 0";
 
+
+        // =========================================
+        // SORT
+        // =========================================
 
         String sortOrder =
                 MediaStore.Audio.Media.TITLE
                         + " ASC";
 
 
+        Cursor cursor = null;
+
+
         try {
 
-            Cursor cursor =
+            cursor =
                     getContentResolver().query(
+
                             collection,
+
                             projection,
+
                             selection,
+
                             null,
+
                             sortOrder
                     );
 
@@ -1268,105 +1313,117 @@ public class HomePage extends AppCompatActivity {
             }
 
 
-            try {
+            // =========================================
+            // COLUMN INDEXES
+            // =========================================
 
-                int idColumn =
-                        cursor.getColumnIndexOrThrow(
-                                MediaStore.Audio.Media._ID
-                        );
-
-
-                int titleColumn =
-                        cursor.getColumnIndexOrThrow(
-                                MediaStore.Audio.Media.TITLE
-                        );
-
-
-                int artistColumn =
-                        cursor.getColumnIndexOrThrow(
-                                MediaStore.Audio.Media.ARTIST
-                        );
-
-
-                int albumIdColumn =
-                        cursor.getColumnIndexOrThrow(
-                                MediaStore.Audio.Media.ALBUM_ID
-                        );
-
-
-                while (cursor.moveToNext()) {
-
-                    long id =
-                            cursor.getLong(
-                                    idColumn
-                            );
-
-
-                    String title =
-                            cursor.getString(
-                                    titleColumn
-                            );
-
-
-                    String artist =
-                            cursor.getString(
-                                    artistColumn
-                            );
-
-
-                    long albumId =
-                            cursor.getLong(
-                                    albumIdColumn
-                            );
-
-
-                    // =================================
-                    // ALBUM ART
-                    // =================================
-
-                    Uri albumArtUri =
-                            Uri.parse(
-                                    "content://media/external/audio/albumart/"
-                                            + albumId
-                            );
-
-
-                    // =================================
-                    // AUDIO URI
-                    // =================================
-
-                    Uri audioUri =
-                            Uri.withAppendedPath(
-                                    collection,
-                                    String.valueOf(id)
-                            );
-
-
-                    // =================================
-                    // CREATE AUDIO
-                    // =================================
-
-                    Audio audio =
-                            new Audio(
-                                    title,
-                                    artist,
-                                    audioUri.toString(),
-                                    albumArtUri.toString()
-                            );
-
-
-                    audioList.add(
-                            audio
+            int idColumn =
+                    cursor.getColumnIndexOrThrow(
+                            MediaStore.Audio.Media._ID
                     );
-                }
 
-            } finally {
 
-                cursor.close();
+            int titleColumn =
+                    cursor.getColumnIndexOrThrow(
+                            MediaStore.Audio.Media.TITLE
+                    );
+
+
+            int artistColumn =
+                    cursor.getColumnIndexOrThrow(
+                            MediaStore.Audio.Media.ARTIST
+                    );
+
+
+            int albumIdColumn =
+                    cursor.getColumnIndexOrThrow(
+                            MediaStore.Audio.Media.ALBUM_ID
+                    );
+
+
+            // =========================================
+            // READ SONGS
+            // =========================================
+
+            while (cursor.moveToNext()) {
+
+                long id =
+                        cursor.getLong(
+                                idColumn
+                        );
+
+
+                String title =
+                        cursor.getString(
+                                titleColumn
+                        );
+
+
+                String artist =
+                        cursor.getString(
+                                artistColumn
+                        );
+
+
+                long albumId =
+                        cursor.getLong(
+                                albumIdColumn
+                        );
+
+
+                // =====================================
+                // ALBUM ART
+                // =====================================
+
+                Uri albumArtUri =
+                        Uri.parse(
+                                "content://media/external/audio/albumart/"
+                                        + albumId
+                        );
+
+
+                // =====================================
+                // AUDIO URI
+                // =====================================
+
+                Uri audioUri =
+                        Uri.withAppendedPath(
+                                collection,
+                                String.valueOf(id)
+                        );
+
+
+                // =====================================
+                // CREATE AUDIO OBJECT
+                // =====================================
+
+                Audio audio =
+                        new Audio(
+
+                                title,
+
+                                artist,
+
+                                audioUri.toString(),
+
+                                albumArtUri.toString()
+                        );
+
+
+                audioList.add(
+                        audio
+                );
             }
 
 
-            adapter.notifyDataSetChanged();
+            // =========================================
+            // UPDATE RECYCLER VIEW
+            // =========================================
+
+            if (adapter != null) {
+
+                adapter.notifyDataSetChanged();
+            }
 
         } catch (Exception e) {
 
@@ -1376,8 +1433,14 @@ public class HomePage extends AppCompatActivity {
                     Toast.LENGTH_LONG
             ).show();
 
-
             e.printStackTrace();
+
+        } finally {
+
+            if (cursor != null) {
+
+                cursor.close();
+            }
         }
     }
 
@@ -1400,66 +1463,31 @@ public class HomePage extends AppCompatActivity {
         );
 
 
-        if (requestCode ==
+        if (requestCode !=
                 REQUEST_AUDIO_PERMISSION) {
 
-            if (grantResults.length > 0 &&
-                    grantResults[0] ==
-                            PackageManager.PERMISSION_GRANTED) {
-
-                loadAudioFiles();
-
-            } else {
-
-                Toast.makeText(
-                        this,
-                        "Audio permission required",
-                        Toast.LENGTH_LONG
-                ).show();
-            }
+            return;
         }
-    }
 
 
-    // =========================================
-    // ON RESUME
-    // =========================================
+        if (
+                grantResults.length > 0
+                        &&
+                        grantResults[0] ==
+                                PackageManager.PERMISSION_GRANTED
+        ) {
 
-    @Override
-    protected void onResume() {
+            loadAudioFiles();
 
-        super.onResume();
-
-
-        if (musicManager != null &&
-                musicManager.exists()) {
-
-            if (musicManager.isPlaying()) {
-
-                playButton.setVisibility(
-                        View.GONE
-                );
-
-
-                pauseButton.setVisibility(
-                        View.VISIBLE
-                );
-
-
-                updateSeekBar();
-
-            } else {
-
-                playButton.setVisibility(
-                        View.VISIBLE
-                );
-
-
-                pauseButton.setVisibility(
-                        View.GONE
-                );
-            }
+            return;
         }
+
+
+        Toast.makeText(
+                this,
+                "Audio permission required",
+                Toast.LENGTH_LONG
+        ).show();
     }
 
 
@@ -1470,10 +1498,21 @@ public class HomePage extends AppCompatActivity {
     @Override
     protected void onDestroy() {
 
-        handler.removeCallbacks(
-                updateSeekBarRunnable
-        );
+        // =========================================
+        // DISMISS BOTTOM SHEET
+        // =========================================
 
+        if (playerBottomSheet != null) {
+
+            playerBottomSheet.dismiss();
+
+            playerBottomSheet = null;
+        }
+
+
+        // =========================================
+        // BLUETOOTH
+        // =========================================
 
         if (bluetoothReceiver != null) {
 

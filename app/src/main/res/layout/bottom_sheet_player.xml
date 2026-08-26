@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="180dp"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/dialog_background">
+
+    <!-- Drag handle -->
+    <View
+        android:layout_width="45dp"
+        android:layout_height="3dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="10dp"
+        android:background="#777777" />
+
+    <!-- Main horizontal player row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Album Art -->
+        <ImageView
+            android:id="@+id/bottomSheetSongImage"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/play_button_bottom"
+            android:contentDescription="Album artwork" />
+
+        <!-- Song information -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <!-- Song title -->
+            <TextView
+                android:id="@+id/bottomSheetSongName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Song Name"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Artist -->
+            <TextView
+                android:id="@+id/bottomSheetArtistName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Artist"
+                android:textSize="14sp"
+                android:textColor="#AAAAAA"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <!-- Play / Pause -->
+        <ImageButton
+            android:id="@+id/bottomSheetPlayButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginStart="10dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/play_button_bottom"
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            android:contentDescription="Play or pause song" />
+
+    </LinearLayout>
+
+    <!-- SeekBar stays down -->
+    <SeekBar
+        android:id="@+id/bottomSheetSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="0dp"
+        android:layout_marginEnd="0dp" />
+
+    <!-- Open full player -->
+    <TextView
+        android:id="@+id/openFullPlayer"
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:text="Open Full Player"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#482050" />
+
+</LinearLayout>

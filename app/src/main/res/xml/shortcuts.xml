@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Continue Playing -->
+<!--    <shortcut-->
+<!--        android:shortcutId="continue_playing"-->
+<!--        android:enabled="true"-->
+<!--        android:icon="@drawable/ic_play"-->
+<!--        android:shortcutShortLabel="@string/continue_playing"-->
+<!--        android:shortcutLongLabel="@string/continue_playing">-->
+
+<!--        <intent-->
+<!--            android:action="android.intent.action.VIEW"-->
+<!--            android:targetPackage="com.example.myapplication"-->
+<!--            android:targetClass="com.example.myapplication.MusicPlayerPage" />-->
+
+<!--    </shortcut>-->
+
+    <!-- Recently Played -->
+    <shortcut
+        android:shortcutId="favorite_songs"
+        android:enabled="true"
+        android:icon="@drawable/ic_media_play"
+        android:shortcutLongLabel="@string/recently_played"
+        android:shortcutShortLabel="@string/recently_played"
+        >
+
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.myapplication"
+            android:targetClass="com.example.myapplication.SplashPage" >
+        <extra
+            android:name="open_songs"
+            android:value="true" />
+        </intent>
+
+    </shortcut>
+
+    <!-- Favorites -->
+<!--    <shortcut-->
+<!--        android:shortcutId="favorites"-->
+<!--        android:enabled="true"-->
+<!--        android:icon="@drawable/heart_liked"-->
+<!--        android:shortcutShortLabel="@string/favorite_songs"-->
+<!--        android:shortcutLongLabel="@string/favorite_songs">-->
+
+<!--        <intent-->
+<!--            android:action="android.intent.action.VIEW"-->
+<!--            android:targetPackage="com.example.myapplication"-->
+<!--            android:targetClass="com.example.myapplication.Favourites" />-->
+
+<!--    </shortcut>-->
+
+</shortcuts>

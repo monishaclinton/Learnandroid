@@ -1,0 +1,44 @@
+plugins {
+    alias(libs.plugins.android.test)
+}
+
+android {
+    namespace = "com.example.benchmark"
+    compileSdk {
+        version = release(37)
+    }
+
+    defaultConfig {
+        minSdk = 25
+        targetSdk = 37
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        // This benchmark buildType is used for benchmarking, and should function like your
+        // release build (for example, with minification on). It"s signed with a debug key
+        // for easy local/CI testing.
+        create("benchmark") {
+            isDebuggable = true
+            signingConfig = getByName("debug").signingConfig
+            matchingFallbacks += listOf("release")
+        }
+    }
+
+    targetProjectPath = ":app"
+    experimentalProperties["android.experimental.self-instrumenting"] = true
+}
+
+dependencies {
+    implementation(libs.benchmark.macro.junit4)
+    implementation(libs.espresso.core)
+    implementation(libs.ext.junit)
+    implementation(libs.uiautomator)
+}
+
+androidComponents {
+    beforeVariants(selector().all()) {
+        it.enable = it.buildType == "benchmark"
+    }
+}
